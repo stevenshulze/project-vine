@@ -1,7 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export type ApplyResult =
   | { success: true; applicationId: string }
@@ -9,7 +9,7 @@ export type ApplyResult =
 
 export async function applyToJob(formData: FormData): Promise<ApplyResult> {
   const cookieStore = cookies()
-  const supabase = createClient()
+  const supabase = createAdminClient()
 
   const jobId          = formData.get('job_id') as string
   const candidateName  = formData.get('candidate_name') as string
