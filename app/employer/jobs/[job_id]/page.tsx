@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import ApplicationRow from './application-row'
 import { updateJobStatus } from '../../actions'
 import DashboardHeader from '@/components/dashboard-header'
+import ShareButtons from '@/components/share-buttons'
 
 const STATUS_STYLES: Record<string, string> = {
   draft:  'bg-gray-100 text-gray-600',
@@ -18,6 +19,7 @@ export default function JobDetailPage({ params }: { params: { job_id: string } }
   const [job, setJob] = useState<any>(null)
   const [applications, setApplications] = useState<any[]>([])
   const [email, setEmail] = useState('')
+  const [jobUrl, setJobUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
   const supabase = createClient()
@@ -32,6 +34,7 @@ export default function JobDetailPage({ params }: { params: { job_id: string } }
     setEmail(user?.email ?? '')
     setJob(j)
     setApplications(apps ?? [])
+    setJobUrl(`${window.location.origin}/jobs/${params.job_id}`)
     setLoading(false)
   }
 
@@ -100,6 +103,21 @@ export default function JobDetailPage({ params }: { params: { job_id: string } }
             </div>
           </div>
           <p className="mt-4 text-sm text-gray-600 whitespace-pre-wrap">{job.description}</p>
+        </div>
+
+        {/* Share */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="font-semibold text-gray-900">Share this role</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Direct applications via this link won't generate a referral fee.
+              </p>
+            </div>
+            {jobUrl && (
+              <ShareButtons url={jobUrl} title={job.title} company={job.org_name ?? ''} />
+            )}
+          </div>
         </div>
 
         {/* Applications */}

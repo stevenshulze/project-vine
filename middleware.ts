@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
   if (
     PUBLIC_PATHS.includes(path) ||
     path.startsWith('/r/') ||
+    path === '/jobs' ||
     path.startsWith('/jobs/')
   ) {
     return response

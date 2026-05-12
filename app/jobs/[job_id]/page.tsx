@@ -1,54 +1,180 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import Link from 'next/link'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import ApplyForm from './apply-form'
+import ShareButtons from '@/components/share-buttons'
 
 interface Props {
   params: { job_id: string }
 }
 
 export default async function JobPage({ params }: Props) {
+  const admin = createAdminClient()
   const supabase = createClient()
 
-  const { data: job } = await supabase
-    .from('jobs')
-    .select('id, title, description, commission_amount, status')
-    .eq('id', params.job_id)
-    .eq('status', 'active')
-    .single()
+  const [{ data: job }, { data: { user } }] = await Promise.all([
+    admin
+      .from('jobs')
+      .select('id, title, description, commission_amount, location, salary_range, status, organizations(name)')
+      .eq('id', params.job_id)
+      .eq('status', 'active')
+      .single(),
+    supabase.auth.getUser(),
+  ])
 
   if (!job) notFound()
 
-  const formatted = new Intl.NumberFormat('en-US', {
+  const headersList = headers()
+  const host = headersList.get('host') ?? 'localhost:3000'
+  const proto = host.startsWith('localhost') ? 'http' : 'https'
+  const jobUrl = `${proto}://${host}/jobs/${job.id}`
+
+  const fmt = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
-  }).format(job.commission_amount)
+  })
+  const feeFormatted = fmt.format(job.commission_amount)
+
+  // If logged-in affiliate, check whether they already have a referral link for this job
+  let affiliateLink: string | null = null
+  if (user) {
+    const { data: profile } = await admin
+      .from('affiliate_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (profile) {
+      const { data: link } = await admin
+        .from('referral_links')
+        .select('token')
+        .eq('affiliate_id', profile.id)
+        .eq('job_id', job.id)
+        .single()
+
+      if (link) affiliateLink = `${proto}://${host}/r/${link.token}`
+    }
+  }
+
+  const org = (job as any).organizations?.name
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-8 py-4">
-        <span className="text-xl font-bold text-vine-700">Vine</span>
+      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <Link href="/jobs" className="text-xl font-bold text-vine-700">Vine</Link>
+        <div className="flex items-center gap-3">
+          {user ? (
+            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">Dashboard →</Link>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700">Log in</Link>
+              <Link href="/register" className="text-sm px-3 py-1.5 bg-vine-600 text-white rounded-lg hover:bg-vine-700 transition-colors">
+                Sign up
+              </Link>
+            </>
+          )}
+        </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-12 space-y-8">
+      <div className="max-w-2xl mx-auto px-4 py-12 space-y-5">
+
         {/* Job details */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
-          <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-start justify-between gap-4 mb-1">
             <h1 className="text-2xl font-bold text-gray-900">{job.title}</h1>
             <span className="inline-flex items-center px-3 py-1 rounded-full bg-vine-50 text-vine-700 text-sm font-medium whitespace-nowrap">
-              {formatted} referral fee
+              {feeFormatted} fee
             </span>
           </div>
-          <div className="prose prose-sm text-gray-600 whitespace-pre-wrap">
+
+          {/* Meta row */}
+          <div className="flex items-center gap-2 flex-wrap text-sm text-gray-400 mb-6">
+            {org && <span className="text-gray-600 font-medium">{org}</span>}
+            {(job as any).location && (
+              <><span>·</span><span>{(job as any).location}</span></>
+            )}
+            {(job as any).salary_range && (
+              <><span>·</span><span>{(job as any).salary_range}</span></>
+            )}
+          </div>
+
+          <div className="prose prose-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
             {job.description}
           </div>
         </div>
 
-        {/* Application form */}
+        {/* Apply */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-5">Apply for this role</h2>
           <ApplyForm jobId={job.id} />
         </div>
+
+        {/* Share */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-900">Share this role</h2>
+            <p className="text-sm text-gray-400 mt-0.5">Know someone who'd be a great fit?</p>
+          </div>
+
+          <ShareButtons url={jobUrl} title={job.title} company={org ?? 'this company'} />
+
+          {/* Affiliate CTA — varies by auth state */}
+          <div className="border-t border-gray-100 pt-4">
+            {affiliateLink ? (
+              /* Logged in + already has a referral link */
+              <div className="bg-vine-50 rounded-xl p-4">
+                <p className="text-sm font-medium text-vine-800 mb-2">
+                  Your referral link earns {feeFormatted} on a successful hire
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-vine-700 bg-vine-100 px-2 py-1 rounded font-mono truncate flex-1">
+                    {affiliateLink}
+                  </code>
+                  <Link
+                    href={`/affiliate/jobs/${job.id}`}
+                    className="text-xs text-vine-700 font-medium hover:underline whitespace-nowrap"
+                  >
+                    Manage →
+                  </Link>
+                </div>
+              </div>
+            ) : user ? (
+              /* Logged in but no referral link yet (affiliate without a link, or employer) */
+              <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-4">
+                <p className="text-sm text-gray-600">
+                  Earn {feeFormatted} for a successful referral on this role.
+                </p>
+                <Link
+                  href={`/affiliate/jobs/${job.id}`}
+                  className="text-sm text-vine-600 font-medium hover:underline whitespace-nowrap"
+                >
+                  Get your link →
+                </Link>
+              </div>
+            ) : (
+              /* Not logged in */
+              <div className="bg-gray-50 rounded-xl p-4 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    Earn {feeFormatted} for a successful referral
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Create a free account to get your tracked referral link.
+                  </p>
+                </div>
+                <Link
+                  href={`/register?redirectTo=/affiliate/jobs/${job.id}`}
+                  className="text-sm px-3 py-1.5 bg-vine-600 text-white rounded-lg hover:bg-vine-700 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  Start earning →
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </main>
   )
