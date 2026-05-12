@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
-export type ActionResult = { success: true } | { success: false; error: string }
+export type ActionResult = { success: true; id?: string } | { success: false; error: string }
 
 export async function createJob(formData: FormData): Promise<ActionResult> {
   const supabase = createClient()
@@ -33,16 +33,16 @@ export async function createJob(formData: FormData): Promise<ActionResult> {
     org = newOrg
   }
 
-  const { error } = await admin.from('jobs').insert({
+  const { data: newJob, error } = await admin.from('jobs').insert({
     org_id: org.id,
     title,
     description,
     commission_amount: commissionAmount,
     status,
-  })
+  }).select('id').single()
 
   if (error) return { success: false, error: error.message }
-  return { success: true }
+  return { success: true, id: newJob.id }
 }
 
 export async function updateJob(jobId: string, formData: FormData): Promise<ActionResult> {

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import ApplicationRow from './application-row'
 import { updateJobStatus } from '../../actions'
-import LogoutButton from '@/components/logout-button'
+import DashboardHeader from '@/components/dashboard-header'
 
 const STATUS_STYLES: Record<string, string> = {
   draft:  'bg-gray-100 text-gray-600',
@@ -17,16 +17,19 @@ const STATUS_STYLES: Record<string, string> = {
 export default function JobDetailPage({ params }: { params: { job_id: string } }) {
   const [job, setJob] = useState<any>(null)
   const [applications, setApplications] = useState<any[]>([])
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
   const supabase = createClient()
 
   const load = async () => {
-    const [{ data: j }, { data: apps }] = await Promise.all([
+    const [{ data: { user } }, { data: j }, { data: apps }] = await Promise.all([
+      supabase.auth.getUser(),
       supabase.from('jobs').select('*').eq('id', params.job_id).single(),
       supabase.from('applications').select('*').eq('job_id', params.job_id)
         .order('applied_at', { ascending: false }),
     ])
+    setEmail(user?.email ?? '')
     setJob(j)
     setApplications(apps ?? [])
     setLoading(false)
@@ -55,13 +58,13 @@ export default function JobDetailPage({ params }: { params: { job_id: string } }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <span className="text-xl font-bold text-vine-700">Vine</span>
-          <Link href="/employer" className="text-sm text-gray-500 hover:text-gray-700">← Jobs</Link>
-        </div>
-        <LogoutButton />
-      </header>
+      <DashboardHeader
+        email={email}
+        nav={[
+          { href: '/employer', label: 'Jobs' },
+          { href: '/employer/commissions', label: 'Commissions' },
+        ]}
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 

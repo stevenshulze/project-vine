@@ -17,7 +17,7 @@ export default function NewJobPage() {
     startTransition(async () => {
       const result = await createJob(formData)
       if (result.success) {
-        router.push('/employer')
+        router.push(result.id ? `/employer/jobs/${result.id}` : '/employer')
       } else {
         setError(result.error)
       }

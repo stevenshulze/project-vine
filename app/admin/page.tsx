@@ -60,7 +60,11 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-gray-50">
       <DashboardHeader
         email={user?.email ?? ''}
-        nav={[{ href: '/admin', label: 'Dashboard' }]}
+        nav={[
+          { href: '/admin', label: 'Commissions' },
+          { href: '/admin/jobs', label: 'Jobs' },
+          { href: '/admin/users', label: 'Users' },
+        ]}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">

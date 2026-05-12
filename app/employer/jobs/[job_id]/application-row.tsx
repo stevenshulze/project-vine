@@ -1,7 +1,8 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 import { updateApplicationStatus } from '../../actions'
+import { createClient } from '@/lib/supabase/client'
 
 const STATUS_STYLES: Record<string, string> = {
   applied:    'bg-blue-50 text-blue-700',
@@ -25,12 +26,24 @@ interface Props {
 
 export default function ApplicationRow({ application: app, onUpdate }: Props) {
   const [isPending, startTransition] = useTransition()
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const supabase = createClient()
 
   const setStatus = (status: string) => {
     startTransition(async () => {
       await updateApplicationStatus(app.id, status)
       onUpdate()
     })
+  }
+
+  const openResume = async () => {
+    if (!app.resume_url) return
+    setResumeLoading(true)
+    const { data } = await supabase.storage
+      .from('resumes')
+      .createSignedUrl(app.resume_url, 3600)
+    setResumeLoading(false)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
   return (
@@ -50,10 +63,13 @@ export default function ApplicationRow({ application: app, onUpdate }: Props) {
       </td>
       <td className="py-3 pr-4">
         {app.resume_url ? (
-          <a href={app.resume_url} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-vine-600 hover:underline">
-            Resume
-          </a>
+          <button
+            onClick={openResume}
+            disabled={resumeLoading}
+            className="text-xs text-vine-600 hover:underline disabled:opacity-50"
+          >
+            {resumeLoading ? 'Opening…' : 'Resume ↗'}
+          </button>
         ) : (
           <span className="text-xs text-gray-300">—</span>
         )}

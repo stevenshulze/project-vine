@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendCandidateConfirmation, sendNewApplicationAlert } from '@/lib/email'
 
 export type ApplyResult =
   | { success: true; applicationId: string }
@@ -83,13 +84,13 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
   if (appError) return { success: false, error: appError.message }
 
   // --- Create pending commission if a referral link is present ---
-  if (affiliateId && referralLinkId) {
-    const { data: job } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', jobId)
-      .single()
+  const { data: job } = await supabase
+    .from('jobs')
+    .select('*, organizations(name, owner_id)')
+    .eq('id', jobId)
+    .single()
 
+  if (affiliateId && referralLinkId) {
     await supabase.from('commissions').insert({
       application_id:  application.id,
       affiliate_id:    affiliateId,
@@ -97,6 +98,35 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
       commission_type: isSelfReferral ? 'self_referral' : 'referral',
       status:          'pending',
     })
+  }
+
+  // --- Email notifications (fire-and-forget) ---
+  const companyName = (job as any)?.organizations?.name ?? 'the company'
+  const orgOwnerId  = (job as any)?.organizations?.owner_id
+
+  sendCandidateConfirmation({
+    to: candidateEmail,
+    candidateName,
+    jobTitle: job?.title ?? 'the role',
+    companyName,
+  }).catch(() => {})
+
+  if (orgOwnerId) {
+    supabase
+      .from('users')
+      .select('email')
+      .eq('id', orgOwnerId)
+      .single()
+      .then(({ data: employer }) => {
+        if (employer?.email) {
+          sendNewApplicationAlert({
+            to: employer.email,
+            candidateName,
+            jobTitle: job?.title ?? 'the role',
+            referred: !!referralLinkId && !isSelfReferral,
+          }).catch(() => {})
+        }
+      })
   }
 
   return { success: true, applicationId: application.id }

@@ -35,7 +35,10 @@ export default async function EmployerDashboard() {
     <main className="min-h-screen bg-gray-50">
       <DashboardHeader
         email={user.email!}
-        nav={[{ href: '/employer', label: 'Jobs' }]}
+        nav={[
+          { href: '/employer', label: 'Jobs' },
+          { href: '/employer/commissions', label: 'Commissions' },
+        ]}
       />
 
       <div className="max-w-4xl mx-auto px-4 py-8">

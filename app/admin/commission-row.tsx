@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { approveCommission, disputeCommission, markCommissionPaid } from './actions'
+import { approveCommission, disputeCommission, markCommissionPaid, resolveDispute } from './actions'
 
 const STATUS_STYLES: Record<string, string> = {
   pending:              'bg-gray-100 text-gray-600',
@@ -56,10 +56,14 @@ export default function CommissionRow({ commission: c, onUpdate }: Props) {
     onUpdate()
   })
 
+  const resolve = (resolution: 'approve' | 'reject') => startTransition(async () => {
+    await resolveDispute(c.id, resolution)
+    onUpdate()
+  })
+
   const affiliateEmail = c.affiliate_profiles?.users?.email ?? c.affiliate_profiles?.payout_email ?? '—'
   const jobTitle       = c.applications?.jobs?.title ?? '—'
   const candidate      = c.applications?.candidate_name ?? '—'
-  const appStatus      = c.applications?.status ?? '—'
 
   return (
     <>
@@ -79,8 +83,8 @@ export default function CommissionRow({ commission: c, onUpdate }: Props) {
           )}
         </td>
         <td className="py-3 pr-4">
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_STYLES[c.status] ?? ''}`}>
-            {c.status.replace('_', ' ')}
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[c.status] ?? ''}`}>
+            {c.status.replace(/_/g, ' ')}
           </span>
         </td>
         <td className="py-3">
@@ -102,6 +106,18 @@ export default function CommissionRow({ commission: c, onUpdate }: Props) {
                 className="text-xs px-2 py-1 border border-vine-300 text-vine-700 rounded hover:bg-vine-50 transition-colors">
                 Mark paid
               </button>
+            )}
+            {c.status === 'disputed' && (
+              <>
+                <button onClick={() => resolve('approve')}
+                  className="text-xs px-2 py-1 bg-vine-600 text-white rounded hover:bg-vine-700 transition-colors">
+                  Approve
+                </button>
+                <button onClick={() => resolve('reject')}
+                  className="text-xs px-2 py-1 border border-gray-200 text-gray-600 rounded hover:bg-gray-50 transition-colors">
+                  Re-review
+                </button>
+              </>
             )}
           </div>
         </td>

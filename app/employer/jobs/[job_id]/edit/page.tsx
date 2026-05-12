@@ -5,18 +5,24 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { updateJob } from '../../../actions'
-import LogoutButton from '@/components/logout-button'
+import DashboardHeader from '@/components/dashboard-header'
 
 export default function EditJobPage({ params }: { params: { job_id: string } }) {
   const [job, setJob] = useState<any>(null)
+  const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.from('jobs').select('*').eq('id', params.job_id).single()
-      .then(({ data }) => setJob(data))
+    Promise.all([
+      supabase.auth.getUser(),
+      supabase.from('jobs').select('*').eq('id', params.job_id).single(),
+    ]).then(([{ data: { user } }, { data }]) => {
+      setEmail(user?.email ?? '')
+      setJob(data)
+    })
   }, [])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -40,10 +46,13 @@ export default function EditJobPage({ params }: { params: { job_id: string } }) 
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold text-vine-700">Vine</span>
-        <LogoutButton />
-      </header>
+      <DashboardHeader
+        email={email}
+        nav={[
+          { href: '/employer', label: 'Jobs' },
+          { href: '/employer/commissions', label: 'Commissions' },
+        ]}
+      />
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
