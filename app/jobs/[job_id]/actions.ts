@@ -37,7 +37,7 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
   if (vineRef) {
     const { data: link } = await supabase
       .from('referral_links')
-      .select('id, affiliate_id')
+      .select('*')
       .eq('token', vineRef)
       .single()
 
@@ -48,14 +48,14 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
       // Self-referral: candidate email matches affiliate's account email
       const { data: affiliateProfile } = await supabase
         .from('affiliate_profiles')
-        .select('user_id')
+        .select('*')
         .eq('id', affiliateId)
         .single()
 
       if (affiliateProfile) {
         const { data: affiliateUser } = await supabase
           .from('users')
-          .select('email')
+          .select('*')
           .eq('id', affiliateProfile.user_id)
           .single()
 
@@ -77,7 +77,7 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
       is_self_referral: isSelfReferral,
       status: 'applied',
     })
-    .select('id')
+    .select('*')
     .single()
 
   if (appError) return { success: false, error: appError.message }
@@ -86,7 +86,7 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
   if (affiliateId && referralLinkId) {
     const { data: job } = await supabase
       .from('jobs')
-      .select('commission_amount')
+      .select('*')
       .eq('id', jobId)
       .single()
 
