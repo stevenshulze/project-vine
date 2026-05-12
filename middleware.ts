@@ -46,8 +46,9 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Unauthenticated — send to login
+  // Unauthenticated — root goes to public job board, everything else to login
   if (!user) {
+    if (path === '/') return NextResponse.redirect(new URL('/jobs', request.url))
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirectTo', path)
     return NextResponse.redirect(loginUrl)
