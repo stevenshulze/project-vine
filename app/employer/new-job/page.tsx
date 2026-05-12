@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createJob } from '../actions'
+import LogoutButton from '@/components/logout-button'
 
 export default function NewJobPage() {
   const [error, setError] = useState<string | null>(null)
@@ -25,8 +26,9 @@ export default function NewJobPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-8 py-4">
+      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
         <span className="text-xl font-bold text-vine-700">Vine</span>
+        <LogoutButton />
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
