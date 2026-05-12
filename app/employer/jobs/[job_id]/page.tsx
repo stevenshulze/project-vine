@@ -72,9 +72,14 @@ export default function JobDetailPage({ params }: { params: { job_id: string } }
               <h1 className="text-xl font-bold text-gray-900">{job.title}</h1>
               <p className="text-sm text-gray-400 mt-1">
                 ${Number(job.commission_amount).toLocaleString()} referral fee
+                {job.location && <span className="ml-2">· {job.location}</span>}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              <Link href={`/employer/jobs/${params.job_id}/edit`}
+                className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                Edit
+              </Link>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_STYLES[job.status] ?? ''}`}>
                 {job.status}
               </span>

@@ -45,6 +45,20 @@ export async function createJob(formData: FormData): Promise<ActionResult> {
   return { success: true }
 }
 
+export async function updateJob(jobId: string, formData: FormData): Promise<ActionResult> {
+  const admin = createAdminClient()
+  const { error } = await admin.from('jobs').update({
+    title:             formData.get('title') as string,
+    description:       formData.get('description') as string,
+    commission_amount: parseFloat(formData.get('commission_amount') as string),
+    status:            formData.get('status') as string,
+    location:          (formData.get('location') as string) || null,
+    salary_range:      (formData.get('salary_range') as string) || null,
+  }).eq('id', jobId)
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
 export async function updateJobStatus(jobId: string, status: string): Promise<ActionResult> {
   const admin = createAdminClient()
   const { error } = await admin.from('jobs').update({ status }).eq('id', jobId)

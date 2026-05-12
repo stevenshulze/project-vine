@@ -47,6 +47,7 @@ export default async function AffiliateDashboard() {
         email={user.email!}
         nav={[
           { href: '/affiliate', label: 'Jobs' },
+          { href: '/affiliate/commissions', label: 'Commissions' },
           { href: '/affiliate/profile', label: 'Profile' },
         ]}
       />

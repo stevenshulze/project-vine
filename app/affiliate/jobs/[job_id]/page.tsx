@@ -48,7 +48,11 @@ export default async function AffiliateJobDetailPage({ params }: { params: { job
     <main className="min-h-screen bg-gray-50">
       <DashboardHeader
         email={user.email!}
-        nav={[{ href: '/affiliate', label: 'Jobs' }, { href: '/affiliate/profile', label: 'Profile' }]}
+        nav={[
+          { href: '/affiliate', label: 'Jobs' },
+          { href: '/affiliate/commissions', label: 'Commissions' },
+          { href: '/affiliate/profile', label: 'Profile' },
+        ]}
       />
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-5">
