@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import DashboardHeader from '@/components/dashboard-header'
 import LinkButton from '../../link-button'
+import { AFFILIATE_NAV } from '../../nav'
 
 export default async function AffiliateJobDetailPage({ params }: { params: { job_id: string } }) {
   const supabase = createClient()
@@ -48,11 +49,7 @@ export default async function AffiliateJobDetailPage({ params }: { params: { job
     <main className="min-h-screen bg-gray-50">
       <DashboardHeader
         email={user.email!}
-        nav={[
-          { href: '/affiliate', label: 'Jobs' },
-          { href: '/affiliate/commissions', label: 'Commissions' },
-          { href: '/affiliate/profile', label: 'Profile' },
-        ]}
+        nav={AFFILIATE_NAV}
       />
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-5">
