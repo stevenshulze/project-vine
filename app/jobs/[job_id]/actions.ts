@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendCandidateConfirmation, sendNewApplicationAlert } from '@/lib/email'
+import { sendCandidateConfirmation, sendNewApplicationAlert, sendApplicationViaLinkAlert } from '@/lib/email'
 
 export type ApplyResult =
   | { success: true; applicationId: string }
@@ -98,6 +98,26 @@ export async function applyToJob(formData: FormData): Promise<ApplyResult> {
       commission_type: isSelfReferral ? 'self_referral' : 'referral',
       status:          'pending',
     })
+
+    // Notify affiliate of the new application (fire-and-forget, skip self-referrals)
+    if (!isSelfReferral) {
+      supabase
+        .from('affiliate_profiles')
+        .select('payout_email, display_name, users(email)')
+        .eq('id', affiliateId)
+        .single()
+        .then(({ data: aff }) => {
+          const affEmail = (aff as any)?.payout_email ?? (aff as any)?.users?.email
+          if (affEmail) {
+            sendApplicationViaLinkAlert({
+              to: affEmail,
+              affiliateName: (aff as any)?.display_name ?? 'there',
+              candidateName,
+              jobTitle: job?.title ?? 'the role',
+            }).catch(() => {})
+          }
+        })
+    }
   }
 
   // --- Email notifications (fire-and-forget) ---

@@ -41,7 +41,9 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.includes(path) ||
     path.startsWith('/r/') ||
     path === '/jobs' ||
-    path.startsWith('/jobs/')
+    path.startsWith('/jobs/') ||
+    path.startsWith('/vineyard/') ||
+    path === '/affiliate/onboarding'
   ) {
     return response
   }
@@ -67,7 +69,7 @@ export async function middleware(request: NextRequest) {
   if (path === '/') {
     const dest = role === 'employer' ? '/employer'
                : role === 'admin'    ? '/admin'
-               : '/affiliate'
+               : '/affiliate/discover'
     return NextResponse.redirect(new URL(dest, request.url))
   }
 

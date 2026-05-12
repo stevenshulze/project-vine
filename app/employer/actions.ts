@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { sendCommissionPendingAlert } from '@/lib/email'
 
 export type ActionResult = { success: true; id?: string } | { success: false; error: string }
 
@@ -33,12 +34,19 @@ export async function createJob(formData: FormData): Promise<ActionResult> {
     org = newOrg
   }
 
+  const industry      = (formData.get('industry') as string) || null
+  const roleFunction  = (formData.get('role_function') as string) || null
+  const locationType  = (formData.get('location_type') as string) || null
+
   const { data: newJob, error } = await admin.from('jobs').insert({
     org_id: org.id,
     title,
     description,
     commission_amount: commissionAmount,
     status,
+    industry,
+    role_function: roleFunction,
+    location_type: locationType,
   }).select('id').single()
 
   if (error) return { success: false, error: error.message }
@@ -54,6 +62,9 @@ export async function updateJob(jobId: string, formData: FormData): Promise<Acti
     status:            formData.get('status') as string,
     location:          (formData.get('location') as string) || null,
     salary_range:      (formData.get('salary_range') as string) || null,
+    industry:          (formData.get('industry') as string) || null,
+    role_function:     (formData.get('role_function') as string) || null,
+    location_type:     (formData.get('location_type') as string) || null,
   }).eq('id', jobId)
   if (error) return { success: false, error: error.message }
   return { success: true }
@@ -79,13 +90,33 @@ export async function updateApplicationStatus(
 
   if (error) return { success: false, error: error.message }
 
-  // Hired → move pending commission to pending_verification
+  // Hired → move pending commission to pending_verification and notify affiliate
   if (status === 'hired') {
-    await admin
+    const { data: commissions } = await admin
       .from('commissions')
       .update({ status: 'pending_verification' })
       .eq('application_id', applicationId)
       .eq('status', 'pending')
+      .select('affiliate_id, amount, jobs(title)')
+
+    const commission = commissions?.[0] as any
+    if (commission?.affiliate_id) {
+      admin
+        .from('affiliate_profiles')
+        .select('payout_email, display_name')
+        .eq('id', commission.affiliate_id)
+        .single()
+        .then(({ data: aff }) => {
+          if (aff?.payout_email) {
+            sendCommissionPendingAlert({
+              to: aff.payout_email,
+              affiliateName: aff.display_name ?? 'there',
+              jobTitle: commission.jobs?.title ?? 'the role',
+              amount: commission.amount,
+            }).catch(() => {})
+          }
+        })
+    }
   }
 
   return { success: true }

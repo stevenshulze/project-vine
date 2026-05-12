@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createJob } from '../actions'
 import LogoutButton from '@/components/logout-button'
+import { NICHES } from '@/lib/niches'
+
+const ROLE_FUNCTIONS = [
+  'Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Operations',
+  'Finance', 'Legal', 'HR & People', 'Customer Success', 'Data & Analytics', 'Executive',
+]
+const LOCATION_TYPES = ['remote', 'hybrid', 'on-site'] as const
 
 export default function NewJobPage() {
   const [error, setError] = useState<string | null>(null)
@@ -81,6 +88,30 @@ export default function NewJobPage() {
                 />
               </div>
               <p className="mt-1 text-xs text-gray-400">Paid to the affiliate when a hire is confirmed.</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                <select name="industry" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vine-500 focus:border-transparent">
+                  <option value="">— Select —</option>
+                  {NICHES.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role function</label>
+                <select name="role_function" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vine-500 focus:border-transparent">
+                  <option value="">— Select —</option>
+                  {ROLE_FUNCTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location type</label>
+                <select name="location_type" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vine-500 focus:border-transparent">
+                  <option value="">— Select —</option>
+                  {LOCATION_TYPES.map((t) => <option key={t} value={t} className="capitalize">{t}</option>)}
+                </select>
+              </div>
             </div>
 
             <div>

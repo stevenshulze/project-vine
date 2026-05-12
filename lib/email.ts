@@ -53,6 +53,60 @@ export async function sendNewApplicationAlert({
   })
 }
 
+export async function sendApplicationViaLinkAlert({
+  to,
+  affiliateName,
+  candidateName,
+  jobTitle,
+}: {
+  to: string
+  affiliateName: string
+  candidateName: string
+  jobTitle: string
+}) {
+  if (!process.env.RESEND_API_KEY) return
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${candidateName} applied via your referral link for ${jobTitle}`,
+    html: `
+      <p>Hi ${affiliateName},</p>
+      <p><strong>${candidateName}</strong> just applied to <strong>${jobTitle}</strong> using your referral link.</p>
+      <p>If they're hired, your referral commission will be triggered automatically.</p>
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/affiliate/pipeline">View your pipeline →</a></p>
+      <p style="color:#888;font-size:12px;margin-top:32px">Vine · Performance-based recruitment</p>
+    `,
+  })
+}
+
+export async function sendCommissionPendingAlert({
+  to,
+  affiliateName,
+  jobTitle,
+  amount,
+}: {
+  to: string
+  affiliateName: string
+  jobTitle: string
+  amount: number
+}) {
+  if (!process.env.RESEND_API_KEY) return
+  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount)
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Your ${fmt} commission for ${jobTitle} is under review`,
+    html: `
+      <p>Hi ${affiliateName},</p>
+      <p>A candidate you referred for <strong>${jobTitle}</strong> has been marked as hired.</p>
+      <p>Your <strong>${fmt}</strong> referral commission is now pending verification by the employer and Vine team.</p>
+      <p>We'll notify you once it's approved.</p>
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/affiliate/dashboard">View your commissions →</a></p>
+      <p style="color:#888;font-size:12px;margin-top:32px">Vine · Performance-based recruitment</p>
+    `,
+  })
+}
+
 export async function sendCommissionApprovedAlert({
   to,
   affiliateName,

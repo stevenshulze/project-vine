@@ -6,6 +6,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { updateJob } from '../../../actions'
 import DashboardHeader from '@/components/dashboard-header'
+import { NICHES } from '@/lib/niches'
+
+const ROLE_FUNCTIONS = [
+  'Engineering', 'Product', 'Design', 'Marketing', 'Sales', 'Operations',
+  'Finance', 'Legal', 'HR & People', 'Customer Success', 'Data & Analytics', 'Executive',
+]
+const LOCATION_TYPES = ['remote', 'hybrid', 'on-site'] as const
 
 export default function EditJobPage({ params }: { params: { job_id: string } }) {
   const [job, setJob] = useState<any>(null)
@@ -114,6 +121,33 @@ export default function EditJobPage({ params }: { params: { job_id: string } }) 
                   <option value="active">Active</option>
                   <option value="paused">Paused</option>
                   <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                <select name="industry" defaultValue={job.industry ?? ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vine-500 focus:border-transparent">
+                  <option value="">— Select —</option>
+                  {NICHES.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role function</label>
+                <select name="role_function" defaultValue={job.role_function ?? ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vine-500 focus:border-transparent">
+                  <option value="">— Select —</option>
+                  {ROLE_FUNCTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location type</label>
+                <select name="location_type" defaultValue={job.location_type ?? ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vine-500 focus:border-transparent">
+                  <option value="">— Select —</option>
+                  {LOCATION_TYPES.map((t) => <option key={t} value={t} className="capitalize">{t}</option>)}
                 </select>
               </div>
             </div>

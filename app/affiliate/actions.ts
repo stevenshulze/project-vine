@@ -2,6 +2,29 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
+export type UpdateProfileResult = { success: true } | { success: false; error: string }
+
+export async function updateAffiliateProfile(formData: FormData): Promise<UpdateProfileResult> {
+  const supabase = createClient()
+  const admin = createAdminClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const displayName   = (formData.get('display_name') as string)?.trim() || null
+  const bio           = (formData.get('bio') as string)?.trim() || null
+  const payoutEmail   = (formData.get('payout_email') as string)?.trim() || user.email
+  const nicheTags     = formData.getAll('niche_tags') as string[]
+  const vineyardPublic = formData.get('vineyard_public') === 'true'
+
+  const { error } = await admin
+    .from('affiliate_profiles')
+    .update({ display_name: displayName, bio, payout_email: payoutEmail, niche_tags: nicheTags, vineyard_public: vineyardPublic })
+    .eq('user_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
 export type GenerateLinkResult =
   | { success: true; token: string }
   | { success: false; error: string }
