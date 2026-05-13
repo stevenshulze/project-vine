@@ -1,11 +1,11 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createActionClient, createAdminClient } from '@/lib/supabase/server'
 
 type Result = { success: true } | { success: false; error: string }
 
 async function getProfile() {
-  const supabase = createClient()
+  const supabase = createActionClient()
   const admin = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null

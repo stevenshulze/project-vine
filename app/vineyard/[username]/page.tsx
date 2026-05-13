@@ -1,21 +1,17 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export default async function VineyardPage({ params }: { params: { username: string } }) {
   const admin = createAdminClient()
-  const supabase = createClient()
 
-  const [{ data: profile }, { data: { user } }] = await Promise.all([
-    admin
-      .from('affiliate_profiles')
-      .select('id, username, display_name, bio, niche_tags, vineyard_public')
-      .eq('username', params.username)
-      .single(),
-    supabase.auth.getUser(),
-  ])
+  const { data: profile } = await admin
+    .from('affiliate_profiles')
+    .select('id, username, display_name, bio, niche_tags, vineyard_public')
+    .eq('username', params.username)
+    .single()
 
-  if (!profile || (!profile.vineyard_public && (!user))) notFound()
+  if (!profile || !profile.vineyard_public) notFound()
 
   // Fetch active vineyard listings with job + referral link data
   const { data: listings } = await admin
@@ -38,10 +34,6 @@ export default async function VineyardPage({ params }: { params: { username: str
   const tokenMap: Record<string, string> = {}
   for (const l of (links ?? []) as any[]) tokenMap[l.job_id] = l.token
 
-  const isOwner = user && (
-    await admin.from('affiliate_profiles').select('id').eq('user_id', user.id).eq('id', profile.id).maybeSingle()
-  ).data !== null
-
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
@@ -49,24 +41,14 @@ export default async function VineyardPage({ params }: { params: { username: str
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Top bar — minimal */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <Link href="/jobs" className="text-sm font-semibold text-vine-700">Vine</Link>
-        {isOwner && (
-          <Link
-            href="/affiliate/vineyard"
-            className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Edit Vineyard
-          </Link>
-        )}
       </div>
 
       <div className="max-w-xl mx-auto px-5 py-10 space-y-8">
 
         {/* Profile section */}
         <div className="text-center space-y-3">
-          {/* Avatar placeholder — initials */}
           <div className="w-16 h-16 rounded-full bg-vine-100 text-vine-700 text-xl font-bold flex items-center justify-center mx-auto">
             {((profile as any).display_name ?? params.username).slice(0, 2).toUpperCase()}
           </div>
@@ -94,9 +76,7 @@ export default async function VineyardPage({ params }: { params: { username: str
         {/* Jobs */}
         {!(listings ?? []).length ? (
           <div className="text-center py-12 text-gray-400 text-sm">
-            {isOwner
-              ? 'No jobs on your Vineyard yet. Add jobs from your pipeline.'
-              : 'No open roles right now. Check back soon.'}
+            No open roles right now. Check back soon.
           </div>
         ) : (
           <div className="space-y-3">

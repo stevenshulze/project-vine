@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createActionClient, createAdminClient } from '@/lib/supabase/server'
 
 export type OnboardingResult =
   | { success: true; username: string }
@@ -30,7 +30,7 @@ async function uniqueUsername(base: string, admin: ReturnType<typeof createAdmin
 }
 
 export async function completeOnboarding(formData: FormData): Promise<OnboardingResult> {
-  const supabase = createClient()
+  const supabase = createActionClient()
   const admin = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

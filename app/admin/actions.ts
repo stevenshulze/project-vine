@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createActionClient, createAdminClient } from '@/lib/supabase/server'
 import { sendCommissionApprovedAlert } from '@/lib/email'
 
 export type ActionResult = { success: true } | { success: false; error: string }
@@ -45,7 +45,7 @@ export async function disputeCommission(
   commissionId: string,
   reason: string
 ): Promise<ActionResult> {
-  const supabase = createClient()
+  const supabase = createActionClient()
   const admin = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }

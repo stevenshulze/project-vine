@@ -1,12 +1,12 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createActionClient, createAdminClient } from '@/lib/supabase/server'
 import { sendCommissionPendingAlert } from '@/lib/email'
 
 export type ActionResult = { success: true; id?: string } | { success: false; error: string }
 
 export async function createJob(formData: FormData): Promise<ActionResult> {
-  const supabase = createClient()
+  const supabase = createActionClient()
   const admin = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }
